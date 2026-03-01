@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>WebCraft IDE</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & BASE ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#09090f;
+  --s1:#111118;
+  --s2:#18181f;
+  --s3:#22222c;
+  --bd:#2e2e3a;
+  --ac:#5b8df6;
+  --ac2:#f65b8d;
+  --ac3:#5bf6a8;
+  --tx:#d4d4e0;
+  --mu:#52526e;
+  --mu2:#7878a0;
+  --code:#c9d1d9;
+  --mono:'JetBrains Mono',monospace;
+}
+body{font-family:var(--mono);background:var(--bg);color:var(--tx);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px;}
+
+/* ── TOPBAR ── */
+#topbar{
+  height:46px;background:var(--s1);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;gap:0;flex-shrink:0;
+}
+#topbar .logo{
+  padding:0 18px;font-family:'Syne',sans-serif;font-size:.95rem;font-weight:800;
+  letter-spacing:-.5px;border-right:1px solid var(--bd);height:100%;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;
+}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--ac);box-shadow:0 0 8px var(--ac);}
+#tabs{display:flex;height:100%;flex:1;overflow:hidden;}
+.tab{
+  padding:0 18px;border-right:1px solid var(--bd);height:100%;
+  display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:.72rem;color:var(--mu2);transition:all .15s;white-space:nowrap;
+  border-bottom:2px solid transparent;
+}
+.tab:hover{color:var(--tx);background:var(--s2);}
+.tab.active{color:var(--tx);border-bottom-color:var(--ac);background:var(--s2);}
+.tab-dot{width:6px;height:6px;border-radius:50%;}
+.tab[data-tab="html"] .tab-dot{background:#e34c26;}
+.tab[data-tab="css"] .tab-dot{background:#264de4;}
+.tab[data-tab="js"] .tab-dot{background:#f7df1e;}
+.tab[data-tab="mq"] .tab-dot{background:var(--ac3);}
+
+#topbar-right{display:flex;align-items:center;gap:6px;padding:0 12px;border-left:1px solid var(--bd);height:100%;}
+.tbtn{
+  padding:5px 12px;border-radius:5px;border:1px solid var(--bd);
+  background:transparent;color:var(--mu2);font-family:var(--mono);
+  font-size:.68rem;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.tbtn:hover{color:var(--tx);border-color:var(--mu2);}
+.tbtn.run{background:var(--ac3);color:#05120b;border-color:var(--ac3);font-weight:600;}
+.tbtn.run:hover{opacity:.9;}
+.tbtn.danger:hover{border-color:var(--ac2);color:var(--ac2);}
+
+/* ── MAIN LAYOUT ── */
+#main{display:flex;flex:1;overflow:hidden;}
+
+/* ── LEFT: EDITOR ── */
+#editor-col{
+  width:420px;flex-shrink:0;display:flex;flex-direction:column;
+  border-right:1px solid var(--bd);background:var(--s1);
+  min-width:200px;position:relative;
+}
+
+/* Editor panes */
+.editor-pane{display:none;flex-direction:column;flex:1;overflow:hidden;}
+.editor-pane.active{display:flex;}
+.editor-pane textarea{
+  flex:1;background:var(--s1);color:var(--code);border:none;outline:none;
+  font-family:var(--mono);font-size:.8rem;line-height:1.7;resize:none;
+  padding:14px 16px;tab-size:2;
+  scrollbar-width:thin;scrollbar-color:var(--bd) transparent;
+}
+.editor-pane textarea::selection{background:#264de460;}
+.editor-pane textarea::-webkit-scrollbar{width:4px;}
+.editor-pane textarea::-webkit-scrollbar-thumb{background:var(--bd);}
+
+/* MQ PANEL */
+#pane-mq{overflow:hidden;}
+#mq-panel{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+#mq-tabs{display:flex;border-bottom:1px solid var(--bd);flex-shrink:0;}
+.mq-tab{
+  flex:1;padding:8px 6px;text-align:center;font-size:.65rem;
+  cursor:pointer;color:var(--mu2);border-bottom:2px solid transparent;
+  transition:all .15s;
+}
+.mq-tab.active{color:var(--ac3);border-bottom-color:var(--ac3);}
+.mq-tab:hover{color:var(--tx);}
+.mq-tab .mq-icon{font-size:.9rem;display:block;margin-bottom:2px;}
+.mq-tab .mq-range{font-size:.55rem;opacity:.6;}
+
+#mq-body{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.mq-pane{display:none;flex-direction:column;flex:1;overflow:hidden;}
+.mq-pane.active{display:flex;}
+.mq-pane-label{
+  padding:8px 14px;font-size:.6rem;color:var(--mu);
+  border-bottom:1px solid var(--bd);flex-shrink:0;letter-spacing:1px;
+}
+.mq-pane textarea{
+  flex:1;background:var(--s1);color:var(--code);border:none;outline:none;
+  font-family:var(--mono);font-size:.78rem;line-height:1.7;resize:none;
+  padding:12px 16px;tab-size:2;
+  scrollbar-width:thin;scrollbar-color:var(--bd) transparent;
+}
+.mq-pane textarea::-webkit-scrollbar{width:4px;}
+.mq-pane textarea::-webkit-scrollbar-thumb{background:var(--bd);}
+.mq-hint{padding:12px 14px;font-size:.62rem;color:var(--mu);line-height:1.6;border-bottom:1px solid var(--bd);flex-shrink:0;}
+.mq-hint code{color:var(--ac3);font-family:var(--mono);}
+
+/* RESIZE HANDLE */
+#resize-handle{
+  width:4px;background:var(--bd);cursor:col-resize;flex-shrink:0;
+  transition:background .15s;position:relative;
+}
+#resize-handle:hover,#resize-handle.dragging{background:var(--ac);}
+
+/* ── RIGHT: PREVIEW ── */
+#preview-col{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+#preview-bar{
+  height:40px;background:var(--s1);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;gap:8px;padding:0 14px;flex-shrink:0;
+}
+#preview-bar .url-bar{
+  flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:5px;
+  padding:4px 12px;font-family:var(--mono);font-size:.7rem;color:var(--mu2);
+  display:flex;align-items:center;gap:8px;
+}
+.url-dot{width:5px;height:5px;border-radius:50%;}
+.url-dot.green{background:var(--ac3);}
+.url-dot.red{background:var(--ac2);display:none;}
+#preview-bar .viewport-btns{display:flex;gap:4px;}
+.vbtn{
+  padding:3px 8px;border-radius:4px;border:1px solid var(--bd);
+  background:transparent;color:var(--mu);font-size:.65rem;cursor:pointer;
+  font-family:var(--mono);transition:all .15s;
+}
+.vbtn.active,.vbtn:hover{border-color:var(--ac);color:var(--ac);}
+
+#preview-frame-wrap{
+  flex:1;overflow:auto;display:flex;justify-content:center;
+  align-items:flex-start;padding:20px;background:#1a1a24;
+  transition:all .2s;
+}
+#preview-frame{
+  background:white;border:none;width:100%;height:100%;
+  border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.5);
+  transition:width .3s, height .3s;min-height:500px;
+}
+
+/* ── BOTTOM: TOOLS ── */
+#toolbox{
+  border-top:1px solid var(--bd);background:var(--s1);
+  flex-shrink:0;display:flex;flex-direction:column;
+}
+#toolbox-tabs{display:flex;border-bottom:1px solid var(--bd);}
+.tt{
+  padding:6px 14px;font-size:.62rem;cursor:pointer;
+  color:var(--mu);border-bottom:2px solid transparent;transition:all .15s;
+  letter-spacing:.5px;
+}
+.tt.active,.tt:hover{color:var(--tx);border-bottom-color:var(--ac);}
+#toolbox-body{display:flex;overflow:hidden;max-height:160px;}
+.tool-pane{display:none;flex:1;overflow:hidden;}
+.tool-pane.active{display:flex;}
+
+/* SNIPPETS */
+#snip-pane{flex-wrap:nowrap;overflow-x:auto;align-items:flex-start;padding:10px 12px;gap:8px;}
+#snip-pane::-webkit-scrollbar{height:3px;}
+#snip-pane::-webkit-scrollbar-thumb{background:var(--bd);}
+.snip-group{display:flex;flex-direction:column;gap:5px;flex-shrink:0;}
+.snip-label{font-size:.55rem;color:var(--mu);letter-spacing:1.5px;text-transform:uppercase;padding:0 4px;margin-bottom:2px;}
+.snip{
+  padding:5px 10px;border-radius:5px;border:1px solid var(--bd);
+  background:var(--s2);color:var(--mu2);font-size:.65rem;cursor:pointer;
+  transition:all .15s;white-space:nowrap;font-family:var(--mono);
+}
+.snip:hover{border-color:var(--ac);color:var(--tx);background:var(--s3);}
+
+/* COLORS */
+#color-pane{padding:10px 14px;gap:10px;align-items:flex-start;flex-wrap:wrap;}
+.color-tool{display:flex;align-items:center;gap:8px;}
+.color-tool label{font-size:.62rem;color:var(--mu2);}
+input[type=color]{width:30px;height:24px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);cursor:pointer;padding:1px;}
+#color-output{font-size:.7rem;color:var(--ac3);font-family:var(--mono);cursor:pointer;padding:4px 8px;background:var(--s2);border-radius:4px;border:1px solid var(--bd);}
+#color-output:hover{border-color:var(--ac3);}
+.color-formats{display:flex;gap:6px;flex-wrap:wrap;}
+.cfmt{padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--mu2);font-size:.62rem;cursor:pointer;font-family:var(--mono);transition:all .15s;}
+.cfmt:hover{border-color:var(--ac);color:var(--ac);}
+.swatch-row{display:flex;gap:5px;flex-wrap:wrap;}
+.sw{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+.sw:hover{transform:scale(1.2);border-color:white;}
+
+/* CSS PROPS */
+#props-pane{padding:8px 14px;gap:8px;flex-wrap:wrap;align-items:flex-start;overflow-y:auto;}
+.prop-chip{
+  padding:4px 10px;border-radius:4px;border:1px solid var(--bd);
+  background:var(--s2);color:var(--mu2);font-size:.62rem;cursor:pointer;
+  transition:all .15s;white-space:nowrap;font-family:var(--mono);
+}
+.prop-chip:hover{border-color:var(--ac2);color:var(--ac2);}
+.prop-chip span{color:var(--mu);margin-left:4px;}
+
+/* ── STATUSBAR ── */
+#statusbar{
+  height:22px;background:var(--ac);display:flex;align-items:center;
+  padding:0 14px;gap:16px;font-size:.6rem;color:rgba(255,255,255,.8);
+  flex-shrink:0;
+}
+#statusbar b{color:white;}
+#status-cursor{margin-left:auto;}
+
+/* ── MODAL / OVERLAY ── */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center;}
+#overlay.open{display:flex;}
+.modal{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:24px;min-width:340px;max-width:500px;}
+.modal h3{font-family:'Syne',sans-serif;font-size:1rem;margin-bottom:16px;color:var(--tx);}
+.modal input,.modal textarea,.modal select{
+  width:100%;background:var(--s1);border:1px solid var(--bd);color:var(--tx);
+  padding:8px 12px;border-radius:6px;font-family:var(--mono);font-size:.75rem;
+  outline:none;margin-bottom:10px;
+}
+.modal input:focus,.modal textarea:focus{border-color:var(--ac);}
+.modal textarea{height:100px;resize:vertical;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;}
+.mbtn{padding:7px 16px;border-radius:5px;font-family:var(--mono);font-size:.68rem;cursor:pointer;border:1px solid var(--bd);background:transparent;color:var(--mu2);transition:all .15s;}
+.mbtn:hover{color:var(--tx);}
+.mbtn.primary{background:var(--ac);border-color:var(--ac);color:white;}
+.mbtn.primary:hover{opacity:.9;}
+
+/* Tooltip */
+.tip{position:fixed;background:var(--s3);border:1px solid var(--bd);border-radius:5px;padding:4px 10px;font-size:.62rem;color:var(--tx);pointer-events:none;z-index:999;display:none;white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo"><div class="logo-dot"></div>WebCraft IDE</div>
+  <div id="tabs">
+    <div class="tab active" data-tab="html"><div class="tab-dot"></div>index.html</div>
+    <div class="tab" data-tab="css"><div class="tab-dot"></div>styles.css</div>
+    <div class="tab" data-tab="js"><div class="tab-dot"></div>script.js</div>
+    <div class="tab" data-tab="mq"><div class="tab-dot"></div>media queries</div>
+  </div>
+  <div id="topbar-right">
+    <button class="tbtn" id="formatBtn">⌥ Formatear</button>
+    <button class="tbtn" id="saveBtn">↓ Exportar</button>
+    <button class="tbtn danger" id="clearBtn">⌫ Limpiar</button>
+    <button class="tbtn run" id="runBtn">▶ Ejecutar</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- EDITOR -->
+  <div id="editor-col">
+
+    <!-- HTML -->
+    <div class="editor-pane active" id="pane-html">
+      <textarea id="code-html" spellcheck="false" placeholder="<!-- Escribe tu HTML aquí -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mi página</title>
+</head>
+<body>
+
+</body>
+</html>"></textarea>
+    </div>
+
+    <!-- CSS -->
+    <div class="editor-pane" id="pane-css">
+      <textarea id="code-css" spellcheck="false" placeholder="/* Escribe tu CSS aquí */
+
+body {
+
+}"></textarea>
+    </div>
+
+    <!-- JS -->
+    <div class="editor-pane" id="pane-js">
+      <textarea id="code-js" spellcheck="false" placeholder="// Escribe tu JavaScript aquí
+
+"></textarea>
+    </div>
+
+    <!-- MEDIA QUERIES -->
+    <div class="editor-pane" id="pane-mq">
+      <div id="mq-panel">
+        <div id="mq-tabs">
+          <div class="mq-tab active" data-mq="xs">
+            <span class="mq-icon">📱</span>Móvil
+            <div class="mq-range">&lt; 480px</div>
+          </div>
+          <div class="mq-tab" data-mq="sm">
+            <span class="mq-icon">📱</span>Small
+            <div class="mq-range">480–768px</div>
+          </div>
+          <div class="mq-tab" data-mq="md">
+            <span class="mq-icon">💻</span>Tablet
+            <div class="mq-range">768–1024px</div>
+          </div>
+          <div class="mq-tab" data-mq="lg">
+            <span class="mq-icon">🖥</span>Desktop
+            <div class="mq-range">1024–1440px</div>
+          </div>
+          <div class="mq-tab" data-mq="xl">
+            <span class="mq-icon">🖥</span>Wide
+            <div class="mq-range">&gt; 1440px</div>
+          </div>
+        </div>
+        <div id="mq-body">
+          <div class="mq-pane active" id="mq-xs">
+            <div class="mq-hint">Se compilará como: <code>@media (max-width: 479px) { ... }</code></div>
+            <textarea spellcheck="false" placeholder="/* Estilos solo para móvil < 480px */
+.container {
+  flex-direction: column;
+  padding: 16px;
+}"></textarea>
+          </div>
+          <div class="mq-pane" id="mq-sm">
+            <div class="mq-hint">Se compilará como: <code>@media (min-width: 480px) and (max-width: 767px) { ... }</code></div>
+            <textarea spellcheck="false" placeholder="/* Estilos para 480px - 768px */"></textarea>
+          </div>
+          <div class="mq-pane" id="mq-md">
+            <div class="mq-hint">Se compilará como: <code>@media (min-width: 768px) and (max-width: 1023px) { ... }</code></div>
+            <textarea spellcheck="false" placeholder="/* Estilos para tablet 768px - 1024px */"></textarea>
+          </div>
+          <div class="mq-pane" id="mq-lg">
+            <div class="mq-hint">Se compilará como: <code>@media (min-width: 1024px) and (max-width: 1439px) { ... }</code></div>
+            <textarea spellcheck="false" placeholder="/* Estilos para desktop 1024px - 1440px */"></textarea>
+          </div>
+          <div class="mq-pane" id="mq-xl">
+            <div class="mq-hint">Se compilará como: <code>@media (min-width: 1440px) { ... }</code></div>
+            <textarea spellcheck="false" placeholder="/* Estilos para pantallas anchas > 1440px */"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /editor-col -->
+
+  <!-- RESIZE HANDLE -->
+  <div id="resize-handle"></div>
+
+  <!-- PREVIEW -->
+  <div id="preview-col">
+    <div id="preview-bar">
+      <div class="url-bar">
+        <div class="url-dot green" id="urlDot"></div>
+        <span id="urlLabel" style="font-size:.68rem;">preview local</span>
+      </div>
+      <div class="viewport-btns">
+        <button class="vbtn active" data-vp="100%|100%">Full</button>
+        <button class="vbtn" data-vp="1280px|100%">1280</button>
+        <button class="vbtn" data-vp="1024px|100%">1024</button>
+        <button class="vbtn" data-vp="768px|100%">768</button>
+        <button class="vbtn" data-vp="480px|100%">480</button>
+        <button class="vbtn" data-vp="375px|100%">375</button>
+      </div>
+    </div>
+    <div id="preview-frame-wrap">
+      <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- TOOLBOX -->
+<div id="toolbox">
+  <div id="toolbox-tabs">
+    <div class="tt active" data-tool="snip">Snippets</div>
+    <div class="tt" data-tool="color">Color Picker</div>
+    <div class="tt" data-tool="props">Propiedades CSS</div>
+  </div>
+  <div id="toolbox-body">
+
+    <!-- SNIPPETS -->
+    <div class="tool-pane active" id="tool-snip">
+      <div id="snip-pane">
+
+        <div class="snip-group">
+          <div class="snip-label">HTML</div>
+          <div class="snip" data-target="html" data-code="&lt;!DOCTYPE html&gt;\n&lt;html lang=&quot;es&quot;&gt;\n&lt;head&gt;\n  &lt;meta charset=&quot;UTF-8&quot;&gt;\n  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;\n  &lt;title&gt;Mi Página&lt;/title&gt;\n&lt;/head&gt;\n&lt;body&gt;\n  \n&lt;/body&gt;\n&lt;/html&gt;">! boilerplate</div>
+          <div class="snip" data-target="html" data-code="&lt;div class=&quot;&quot;&gt;\n  \n&lt;/div&gt;">div</div>
+          <div class="snip" data-target="html" data-code="&lt;section class=&quot;&quot;&gt;\n  \n&lt;/section&gt;">section</div>
+          <div class="snip" data-target="html" data-code="&lt;nav class=&quot;&quot;&gt;\n  &lt;ul&gt;\n    &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Link&lt;/a&gt;&lt;/li&gt;\n  &lt;/ul&gt;\n&lt;/nav&gt;">nav</div>
+          <div class="snip" data-target="html" data-code="&lt;header&gt;\n  \n&lt;/header&gt;">header</div>
+          <div class="snip" data-target="html" data-code="&lt;main&gt;\n  \n&lt;/main&gt;">main</div>
+          <div class="snip" data-target="html" data-code="&lt;footer&gt;\n  \n&lt;/footer&gt;">footer</div>
+          <div class="snip" data-target="html" data-code="&lt;article class=&quot;&quot;&gt;\n  \n&lt;/article&gt;">article</div>
+          <div class="snip" data-target="html" data-code="&lt;img src=&quot;&quot; alt=&quot;&quot; loading=&quot;lazy&quot;&gt;">img</div>
+          <div class="snip" data-target="html" data-code="&lt;a href=&quot;&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;&lt;/a&gt;">a</div>
+          <div class="snip" data-target="html" data-code="&lt;button type=&quot;button&quot; class=&quot;&quot;&gt;&lt;/button&gt;">button</div>
+          <div class="snip" data-target="html" data-code="&lt;form action=&quot;&quot; method=&quot;post&quot;&gt;\n  &lt;input type=&quot;text&quot; name=&quot;&quot; placeholder=&quot;&quot;&gt;\n  &lt;button type=&quot;submit&quot;&gt;Enviar&lt;/button&gt;\n&lt;/form&gt;">form</div>
+          <div class="snip" data-target="html" data-code="&lt;input type=&quot;text&quot; name=&quot;&quot; id=&quot;&quot; placeholder=&quot;&quot;&gt;">input</div>
+          <div class="snip" data-target="html" data-code="&lt;ul&gt;\n  &lt;li&gt;&lt;/li&gt;\n  &lt;li&gt;&lt;/li&gt;\n&lt;/ul&gt;">ul/li</div>
+          <div class="snip" data-target="html" data-code="&lt;table&gt;\n  &lt;thead&gt;\n    &lt;tr&gt;&lt;th&gt;&lt;/th&gt;&lt;/tr&gt;\n  &lt;/thead&gt;\n  &lt;tbody&gt;\n    &lt;tr&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;\n  &lt;/tbody&gt;\n&lt;/table&gt;">table</div>
+          <div class="snip" data-target="html" data-code="&lt;link rel=&quot;stylesheet&quot; href=&quot;styles.css&quot;&gt;">&lt;link&gt; CSS</div>
+          <div class="snip" data-target="html" data-code="&lt;script src=&quot;script.js&quot; defer&gt;&lt;/script&gt;">&lt;script&gt;</div>
+          <div class="snip" data-target="html" data-code="&lt;meta name=&quot;description&quot; content=&quot;&quot;&gt;">meta desc</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">Flexbox</div>
+          <div class="snip" data-target="css" data-code="display: flex;\nalign-items: center;\njustify-content: center;">flex center</div>
+          <div class="snip" data-target="css" data-code="display: flex;\nalign-items: center;\njustify-content: space-between;">flex space-between</div>
+          <div class="snip" data-target="css" data-code="display: flex;\nflex-direction: column;\ngap: 16px;">flex column</div>
+          <div class="snip" data-target="css" data-code="display: flex;\nflex-wrap: wrap;\ngap: 16px;">flex wrap</div>
+          <div class="snip" data-target="css" data-code="flex: 1;">flex: 1</div>
+          <div class="snip" data-target="css" data-code="flex: 0 0 auto;">flex no-grow</div>
+          <div class="snip" data-target="css" data-code="order: 1;">order</div>
+          <div class="snip" data-target="css" data-code="align-self: flex-start;">align-self</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">Grid</div>
+          <div class="snip" data-target="css" data-code="display: grid;\ngrid-template-columns: repeat(3, 1fr);\ngap: 24px;">grid 3col</div>
+          <div class="snip" data-target="css" data-code="display: grid;\ngrid-template-columns: repeat(auto-fit, minmax(280px, 1fr));\ngap: 20px;">grid auto-fit</div>
+          <div class="snip" data-target="css" data-code="display: grid;\ngrid-template-areas:\n  'header header'\n  'sidebar main'\n  'footer footer';">grid areas</div>
+          <div class="snip" data-target="css" data-code="grid-column: 1 / -1;">col full-width</div>
+          <div class="snip" data-target="css" data-code="grid-column: span 2;">col span 2</div>
+          <div class="snip" data-target="css" data-code="place-items: center;">place-items</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">Posición</div>
+          <div class="snip" data-target="css" data-code="position: relative;">relative</div>
+          <div class="snip" data-target="css" data-code="position: absolute;\ntop: 0;\nleft: 0;\nwidth: 100%;\nheight: 100%;">absolute full</div>
+          <div class="snip" data-target="css" data-code="position: fixed;\ntop: 0;\nleft: 0;\nright: 0;\nz-index: 100;">fixed top</div>
+          <div class="snip" data-target="css" data-code="position: sticky;\ntop: 0;\nz-index: 10;">sticky top</div>
+          <div class="snip" data-target="css" data-code="inset: 0;">inset: 0</div>
+          <div class="snip" data-target="css" data-code="transform: translate(-50%, -50%);\ntop: 50%;\nleft: 50%;">centrar abs</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">Tipografía</div>
+          <div class="snip" data-target="css" data-code="font-family: sans-serif;\nfont-size: 1rem;\nfont-weight: 400;\nline-height: 1.6;\ncolor: #111;">font base</div>
+          <div class="snip" data-target="css" data-code="font-size: clamp(1.5rem, 4vw, 3rem);">font clamp</div>
+          <div class="snip" data-target="css" data-code="text-overflow: ellipsis;\nwhite-space: nowrap;\noverflow: hidden;">text ellipsis</div>
+          <div class="snip" data-target="css" data-code="display: -webkit-box;\n-webkit-line-clamp: 3;\n-webkit-box-orient: vertical;\noverflow: hidden;">line clamp 3</div>
+          <div class="snip" data-target="css" data-code="letter-spacing: 0.05em;\ntext-transform: uppercase;">uppercase</div>
+          <div class="snip" data-target="css" data-code="@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');">Google Font</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">Box / Spacing</div>
+          <div class="snip" data-target="css" data-code="margin: 0 auto;\nmax-width: 1200px;\npadding: 0 24px;">container</div>
+          <div class="snip" data-target="css" data-code="padding: clamp(16px, 5vw, 64px);">padding clamp</div>
+          <div class="snip" data-target="css" data-code="width: 100%;\nmax-width: 480px;">max-width</div>
+          <div class="snip" data-target="css" data-code="aspect-ratio: 16 / 9;">aspect-ratio</div>
+          <div class="snip" data-target="css" data-code="min-height: 100vh;\nmin-height: 100dvh;">full height</div>
+          <div class="snip" data-target="css" data-code="box-sizing: border-box;">border-box</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">Visual</div>
+          <div class="snip" data-target="css" data-code="border-radius: 8px;\noverflow: hidden;">rounded</div>
+          <div class="snip" data-target="css" data-code="box-shadow: 0 4px 24px rgba(0,0,0,0.12);">shadow</div>
+          <div class="snip" data-target="css" data-code="box-shadow:\n  0 1px 2px rgba(0,0,0,.07),\n  0 4px 12px rgba(0,0,0,.1),\n  0 16px 48px rgba(0,0,0,.15);">shadow layered</div>
+          <div class="snip" data-target="css" data-code="background: linear-gradient(135deg, #667eea, #764ba2);">gradient</div>
+          <div class="snip" data-target="css" data-code="backdrop-filter: blur(12px);\n-webkit-backdrop-filter: blur(12px);">blur</div>
+          <div class="snip" data-target="css" data-code="outline: none;\nborder: none;\nappearance: none;">reset input</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">Animación</div>
+          <div class="snip" data-target="css" data-code="transition: all 0.2s ease;">transition</div>
+          <div class="snip" data-target="css" data-code="transition:\n  opacity 0.3s ease,\n  transform 0.3s ease;">transition multi</div>
+          <div class="snip" data-target="css" data-code="@keyframes fadeIn {\n  from { opacity: 0; transform: translateY(12px); }\n  to   { opacity: 1; transform: translateY(0); }\n}\n.el {\n  animation: fadeIn 0.4s ease forwards;\n}">fadeIn</div>
+          <div class="snip" data-target="css" data-code="@keyframes spin {\n  to { transform: rotate(360deg); }\n}\n.el {\n  animation: spin 1s linear infinite;\n}">spin</div>
+          <div class="snip" data-target="css" data-code="transform: scale(1.05);\ncursor: pointer;">hover scale</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">CSS Variables</div>
+          <div class="snip" data-target="css" data-code=":root {\n  --primary: #5b8df6;\n  --bg: #ffffff;\n  --text: #111111;\n  --radius: 8px;\n  --shadow: 0 4px 24px rgba(0,0,0,.1);\n}">:root vars</div>
+          <div class="snip" data-target="css" data-code="color: var(--primary);">var()</div>
+          <div class="snip" data-target="css" data-code="@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #111;\n    --text: #f0f0f0;\n  }\n}">dark mode</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">JavaScript</div>
+          <div class="snip" data-target="js" data-code="document.addEventListener('DOMContentLoaded', () => {\n  \n});">DOMContentLoaded</div>
+          <div class="snip" data-target="js" data-code="const el = document.querySelector('');">querySelector</div>
+          <div class="snip" data-target="js" data-code="const els = document.querySelectorAll('');\nels.forEach(el => {\n  \n});">querySelectorAll</div>
+          <div class="snip" data-target="js" data-code="el.addEventListener('click', (e) => {\n  \n});">addEventListener</div>
+          <div class="snip" data-target="js" data-code="el.classList.toggle('active');">classList.toggle</div>
+          <div class="snip" data-target="js" data-code="el.style.setProperty('--var', value);">CSS var JS</div>
+          <div class="snip" data-target="js" data-code="const data = await fetch('/api')\n  .then(r => r.json());">fetch</div>
+          <div class="snip" data-target="js" data-code="const observer = new IntersectionObserver((entries) => {\n  entries.forEach(entry => {\n    if (entry.isIntersecting) {\n      entry.target.classList.add('visible');\n    }\n  });\n});\ndocument.querySelectorAll('.animate').forEach(el => observer.observe(el));">IntersectionObserver</div>
+          <div class="snip" data-target="js" data-code="window.addEventListener('scroll', () => {\n  const y = window.scrollY;\n});">scroll event</div>
+        </div>
+
+        <div class="snip-group">
+          <div class="snip-label">Reset CSS</div>
+          <div class="snip" data-target="css" data-code="*, *::before, *::after {\n  box-sizing: border-box;\n  margin: 0;\n  padding: 0;\n}\nbody {\n  font-family: system-ui, sans-serif;\n  line-height: 1.5;\n  -webkit-font-smoothing: antialiased;\n}\nimg, video {\n  max-width: 100%;\n  display: block;\n}\ninput, button, textarea, select {\n  font: inherit;\n}\n">Modern Reset</div>
+          <div class="snip" data-target="css" data-code="html {\n  scroll-behavior: smooth;\n}">scroll smooth</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- COLOR PICKER -->
+    <div class="tool-pane" id="tool-color">
+      <div id="color-pane" style="display:flex;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="color-tool">
+            <label>Color:</label>
+            <input type="color" id="colorPicker" value="#5b8df6">
+            <div id="color-output" title="Click para copiar">#5b8df6</div>
+          </div>
+          <div class="color-formats">
+            <div class="cfmt" id="cfmt-hex">HEX</div>
+            <div class="cfmt" id="cfmt-rgb">RGB</div>
+            <div class="cfmt" id="cfmt-hsl">HSL</div>
+            <div class="cfmt" id="cfmt-rgba50">rgba 50%</div>
+            <div class="cfmt" id="cfmt-rgba10">rgba 10%</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-left:16px;">
+          <div style="font-size:.6rem;color:var(--mu);letter-spacing:1px;">PALETA RÁPIDA</div>
+          <div class="swatch-row">
+            <div class="sw" style="background:#5b8df6" title="#5b8df6" onclick="setColor('#5b8df6')"></div>
+            <div class="sw" style="background:#f65b8d" title="#f65b8d" onclick="setColor('#f65b8d')"></div>
+            <div class="sw" style="background:#5bf6a8" title="#5bf6a8" onclick="setColor('#5bf6a8')"></div>
+            <div class="sw" style="background:#f6d25b" title="#f6d25b" onclick="setColor('#f6d25b')"></div>
+            <div class="sw" style="background:#b65bf6" title="#b65bf6" onclick="setColor('#b65bf6')"></div>
+            <div class="sw" style="background:#f65b3d" title="#f65b3d" onclick="setColor('#f65b3d')"></div>
+            <div class="sw" style="background:#111111" title="#111111" onclick="setColor('#111111')"></div>
+            <div class="sw" style="background:#ffffff;border:1px solid #333" title="#ffffff" onclick="setColor('#ffffff')"></div>
+            <div class="sw" style="background:#f8fafc" title="#f8fafc" onclick="setColor('#f8fafc')"></div>
+            <div class="sw" style="background:#1e293b" title="#1e293b" onclick="setColor('#1e293b')"></div>
+            <div class="sw" style="background:#475569" title="#475569" onclick="setColor('#475569')"></div>
+            <div class="sw" style="background:#e2e8f0" title="#e2e8f0" onclick="setColor('#e2e8f0')"></div>
+          </div>
+        </div>
+        <div style="margin-left:16px;display:flex;flex-direction:column;gap:6px;">
+          <div style="font-size:.6rem;color:var(--mu);letter-spacing:1px;">INSERTAR EN</div>
+          <div style="display:flex;gap:6px;">
+            <div class="cfmt" onclick="insertColorTo('css')">→ CSS</div>
+            <div class="cfmt" onclick="insertColorTo('html')">→ HTML</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSS PROPS -->
+    <div class="tool-pane" id="tool-props">
+      <div id="props-pane" style="display:flex;">
+        <!-- Generadas en JS -->
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <span>WebCraft IDE</span>
+  <span id="status-tab">HTML</span>
+  <span id="status-lines">0 líneas</span>
+  <span id="status-chars">0 chars</span>
+  <span id="status-cursor" style="margin-left:auto;">Ln 1, Col 1</span>
+</div>
+
+<!-- OVERLAY/MODAL -->
+<div id="overlay">
+  <div class="modal" id="modal-content">
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+/* ══════════════════════════════
+   ESTADO
+══════════════════════════════ */
+const state = {
+  activeTab: 'html',   // html | css | js | mq
+  activeMq:  'xs',
+  activeVp:  '100%|100%',
+  activeTool:'snip',
+  autorun: true,
+  runTimer: null,
+};
+
+// Obtener textareas
+const editors = {
+  html: document.getElementById('code-html'),
+  css:  document.getElementById('code-css'),
+  js:   document.getElementById('code-js'),
+};
+
+const mqTextareas = {
+  xs: document.querySelector('#mq-xs textarea'),
+  sm: document.querySelector('#mq-sm textarea'),
+  md: document.querySelector('#mq-md textarea'),
+  lg: document.querySelector('#mq-lg textarea'),
+  xl: document.querySelector('#mq-xl textarea'),
+};
+
+const mqRanges = {
+  xs: { max: 479 },
+  sm: { min: 480,  max: 767  },
+  md: { min: 768,  max: 1023 },
+  lg: { min: 1024, max: 1439 },
+  xl: { min: 1440 },
+};
+
+/* ══════════════════════════════
+   TABS
+══════════════════════════════ */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const t = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.editor-pane').forEach(x => x.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('pane-' + t).classList.add('active');
+    state.activeTab = t;
+    updateStatusBar();
+  });
+});
+
+/* ══════════════════════════════
+   MEDIA QUERY TABS
+══════════════════════════════ */
+document.querySelectorAll('.mq-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const mq = tab.dataset.mq;
+    document.querySelectorAll('.mq-tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.mq-pane').forEach(x => x.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('mq-' + mq).classList.add('active');
+    state.activeMq = mq;
+  });
+});
+
+/* ══════════════════════════════
+   PREVIEW
+══════════════════════════════ */
+function buildFullHTML() {
+  const html = editors.html.value;
+  const css  = editors.css.value;
+  const js   = editors.js.value;
+
+  // Compile media queries
+  let mqCSS = '';
+  Object.entries(mqRanges).forEach(([key, range]) => {
+    const code = (mqTextareas[key]?.value || '').trim();
+    if (!code) return;
+    let mq = '';
+    if (range.min && range.max) mq = `@media (min-width: ${range.min}px) and (max-width: ${range.max}px)`;
+    else if (range.min)          mq = `@media (min-width: ${range.min}px)`;
+    else                         mq = `@media (max-width: ${range.max}px)`;
+    mqCSS += `\n${mq} {\n${code}\n}\n`;
+  });
+
+  // If html already has <!DOCTYPE, inject <style>/<script> inside
+  if (html.toLowerCase().includes('<!doctype') || html.toLowerCase().includes('<html')) {
+    let result = html;
+    const styleTag = `<style>\n${css}\n${mqCSS}\n</style>`;
+    const scriptTag = `<script>\n${js}\n<\/script>`;
+    if (result.includes('</head>')) {
+      result = result.replace('</head>', styleTag + '\n</head>');
+    } else {
+      result = styleTag + result;
+    }
+    if (js.trim()) {
+      if (result.includes('</body>')) {
+        result = result.replace('</body>', scriptTag + '\n</body>');
+      } else {
+        result += scriptTag;
+      }
+    }
+    return result;
+  }
+
+  // Otherwise wrap everything
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+${css}
+${mqCSS}
+</style>
+</head>
+<body>
+${html}
+${js.trim() ? `<script>${js}<\/script>` : ''}
+</body>
+</html>`;
+}
+
+function runPreview() {
+  const frame = document.getElementById('preview-frame');
+  const doc = frame.contentDocument || frame.contentWindow.document;
+  doc.open();
+  doc.write(buildFullHTML());
+  doc.close();
+}
+
+// Auto-run on change
+function scheduleRun() {
+  clearTimeout(state.runTimer);
+  state.runTimer = setTimeout(runPreview, 600);
+}
+
+Object.values(editors).forEach(ta => ta.addEventListener('input', scheduleRun));
+Object.values(mqTextareas).forEach(ta => ta?.addEventListener('input', scheduleRun));
+
+document.getElementById('runBtn').addEventListener('click', runPreview);
+
+/* ══════════════════════════════
+   VIEWPORT
+══════════════════════════════ */
+document.querySelectorAll('.vbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.vbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const [w, h] = btn.dataset.vp.split('|');
+    const frame = document.getElementById('preview-frame');
+    const wrap = document.getElementById('preview-frame-wrap');
+    if (w === '100%') {
+      frame.style.width = '100%';
+      wrap.style.justifyContent = 'stretch';
+    } else {
+      frame.style.width = w;
+      wrap.style.justifyContent = 'center';
+    }
+  });
+});
+
+/* ══════════════════════════════
+   TOOLBOX TABS
+══════════════════════════════ */
+document.querySelectorAll('.tt').forEach(tt => {
+  tt.addEventListener('click', () => {
+    document.querySelectorAll('.tt').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tool-pane').forEach(x => x.classList.remove('active'));
+    tt.classList.add('active');
+    document.getElementById('tool-' + tt.dataset.tool).classList.add('active');
+    state.activeTool = tt.dataset.tool;
+  });
+});
+
+/* ══════════════════════════════
+   SNIPPETS
+══════════════════════════════ */
+function decodeHtml(s) {
+  const t = document.createElement('textarea');
+  t.innerHTML = s;
+  return t.value;
+}
+
+document.querySelectorAll('.snip').forEach(snip => {
+  snip.addEventListener('click', () => {
+    const target = snip.dataset.target; // html | css | js
+    const code = decodeHtml(snip.dataset.code);
+
+    let ta;
+    if (target === 'html') ta = editors.html;
+    else if (target === 'css') ta = editors.css;
+    else if (target === 'js') ta = editors.js;
+    if (!ta) return;
+
+    // Switch to that tab
+    document.querySelector(`.tab[data-tab="${target}"]`)?.click();
+
+    // Insert at cursor position
+    insertAtCursor(ta, code);
+    scheduleRun();
+    showTip(snip, '¡Snippet insertado!');
+  });
+});
+
+function insertAtCursor(ta, text) {
+  const start = ta.selectionStart;
+  const end   = ta.selectionEnd;
+  const before = ta.value.substring(0, start);
+  const after  = ta.value.substring(end);
+  ta.value = before + text + after;
+  ta.selectionStart = ta.selectionEnd = start + text.length;
+  ta.focus();
+  updateStatusBar();
+}
+
+/* ══════════════════════════════
+   COLOR PICKER
+══════════════════════════════ */
+const picker = document.getElementById('colorPicker');
+const colorOut = document.getElementById('color-output');
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+function hexToHsl(hex) {
+  let {r,g,b} = hexToRgb(hex);
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){h=s=0;}else{
+    const d=max-min;
+    s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break;}
+    h/=6;
+  }
+  return {h:Math.round(h*360),s:Math.round(s*100),l:Math.round(l*100)};
+}
+
+function getColorFormats(hex) {
+  const {r,g,b} = hexToRgb(hex);
+  const {h,s,l} = hexToHsl(hex);
+  return {
+    hex,
+    rgb:    `rgb(${r}, ${g}, ${b})`,
+    hsl:    `hsl(${h}, ${s}%, ${l}%)`,
+    rgba50: `rgba(${r}, ${g}, ${b}, 0.5)`,
+    rgba10: `rgba(${r}, ${g}, ${b}, 0.1)`,
+  };
+}
+
+function updateColorOutput(hex) {
+  colorOut.textContent = hex;
+  picker.value = hex;
+}
+
+picker.addEventListener('input', () => updateColorOutput(picker.value));
+
+colorOut.addEventListener('click', () => {
+  navigator.clipboard.writeText(colorOut.textContent);
+  showTip(colorOut, 'Copiado!');
+});
+
+function setColor(hex) {
+  updateColorOutput(hex);
+}
+
+// Format buttons
+const fmts = {
+  'cfmt-hex': 'hex', 'cfmt-rgb': 'rgb', 'cfmt-hsl': 'hsl',
+  'cfmt-rgba50': 'rgba50', 'cfmt-rgba10': 'rgba10'
+};
+Object.entries(fmts).forEach(([id, key]) => {
+  document.getElementById(id)?.addEventListener('click', () => {
+    const f = getColorFormats(picker.value);
+    navigator.clipboard.writeText(f[key]);
+    colorOut.textContent = f[key];
+    showTip(document.getElementById(id), 'Copiado: ' + f[key]);
+  });
+});
+
+function insertColorTo(target) {
+  const color = colorOut.textContent;
+  const ta = target === 'css' ? editors.css : editors.html;
+  document.querySelector(`.tab[data-tab="${target}"]`)?.click();
+  insertAtCursor(ta, color);
+}
+
+/* ══════════════════════════════
+   CSS PROPS PANEL
+══════════════════════════════ */
+const cssProps = [
+  // Layout
+  ['display','block | flex | grid | inline | none | inline-flex | contents'],
+  ['position','static | relative | absolute | fixed | sticky'],
+  ['top | right | bottom | left','0 | auto | 50% | 100%'],
+  ['z-index','0 | 1 | 10 | 100 | -1'],
+  ['float','none | left | right'],
+  ['clear','none | both | left | right'],
+  ['overflow','visible | hidden | auto | scroll | clip'],
+  ['overflow-x / overflow-y','visible | hidden | auto | scroll'],
+  ['visibility','visible | hidden | collapse'],
+  ['opacity','0 | 0.5 | 1'],
+  // Flexbox
+  ['flex-direction','row | column | row-reverse | column-reverse'],
+  ['flex-wrap','nowrap | wrap | wrap-reverse'],
+  ['justify-content','flex-start | center | flex-end | space-between | space-around | space-evenly'],
+  ['align-items','stretch | center | flex-start | flex-end | baseline'],
+  ['align-content','stretch | center | flex-start | flex-end | space-between'],
+  ['gap / row-gap / column-gap','0 | 8px | 16px | 24px | 1rem'],
+  ['flex','1 | 0 0 auto | 1 1 0 | none'],
+  ['flex-grow','0 | 1 | 2'],
+  ['flex-shrink','0 | 1'],
+  ['flex-basis','auto | 0 | 100%'],
+  ['order','0 | -1 | 1'],
+  ['align-self','auto | center | flex-start | flex-end | stretch'],
+  // Grid
+  ['grid-template-columns','repeat(3,1fr) | auto 1fr | 200px auto'],
+  ['grid-template-rows','auto | repeat(3,auto) | 100px auto'],
+  ['grid-template-areas','\'header\' \'main\' \'footer\''],
+  ['grid-column','auto | 1 / -1 | span 2'],
+  ['grid-row','auto | 1 / 3 | span 2'],
+  ['place-items','center | start | end | stretch'],
+  ['place-content','center | space-between'],
+  // Box model
+  ['width','auto | 100% | 50% | 200px | fit-content | max-content | min-content'],
+  ['height','auto | 100% | 100vh | 100dvh | fit-content'],
+  ['min-width / max-width','0 | none | 100% | 480px | 1200px'],
+  ['min-height / max-height','0 | none | 100vh | 500px'],
+  ['margin','0 | auto | 0 auto | 16px | 0 24px'],
+  ['padding','0 | 16px | 24px 16px | clamp(16px,5vw,64px)'],
+  ['box-sizing','border-box | content-box'],
+  ['aspect-ratio','auto | 16/9 | 1/1 | 4/3'],
+  // Typography
+  ['font-family','sans-serif | serif | monospace | inherit'],
+  ['font-size','1rem | 1.25rem | clamp(1rem,3vw,2rem) | 16px'],
+  ['font-weight','400 | 500 | 600 | 700 | 800 | bold | normal'],
+  ['font-style','normal | italic | oblique'],
+  ['line-height','1 | 1.5 | 1.6 | 2 | normal'],
+  ['letter-spacing','normal | 0.05em | -0.02em | 1px'],
+  ['text-align','left | center | right | justify | start | end'],
+  ['text-decoration','none | underline | line-through'],
+  ['text-transform','none | uppercase | lowercase | capitalize'],
+  ['white-space','normal | nowrap | pre | pre-wrap'],
+  ['word-break','normal | break-word | break-all'],
+  ['color','inherit | currentColor | #111 | rgba(0,0,0,.8)'],
+  // Backgrounds
+  ['background','transparent | #fff | var(--bg) | url(\'\') center/cover'],
+  ['background-color','transparent | #fff | rgba(0,0,0,.5)'],
+  ['background-image','none | url(\'\') | linear-gradient(135deg,#000,#fff)'],
+  ['background-size','auto | cover | contain | 100% 100%'],
+  ['background-position','center | top | 50% 50%'],
+  ['background-repeat','repeat | no-repeat | repeat-x | repeat-y'],
+  ['background-attachment','scroll | fixed | local'],
+  // Border
+  ['border','none | 1px solid #ddd | 2px solid currentColor'],
+  ['border-width','0 | 1px | 2px | 4px'],
+  ['border-style','none | solid | dashed | dotted | double'],
+  ['border-color','transparent | currentColor | #ddd'],
+  ['border-radius','0 | 4px | 8px | 50% | 9999px | clamp(4px,1vw,12px)'],
+  ['outline','none | 2px solid #5b8df6 | 1px dashed #ccc'],
+  ['outline-offset','0 | 2px | 4px'],
+  // Shadow
+  ['box-shadow','none | 0 4px 24px rgba(0,0,0,.1) | inset 0 2px 4px rgba(0,0,0,.1)'],
+  ['text-shadow','none | 0 1px 2px rgba(0,0,0,.5)'],
+  // Transform & transition
+  ['transform','none | translate(0,0) | scale(1) | rotate(0deg) | translateX(0)'],
+  ['transform-origin','center | top left | 50% 50%'],
+  ['transition','none | all 0.2s ease | opacity 0.3s, transform 0.3s'],
+  ['transition-timing-function','ease | linear | ease-in | ease-out | ease-in-out | cubic-bezier(0,0,.2,1)'],
+  ['animation','none | name 0.3s ease forwards'],
+  ['will-change','auto | transform | opacity | contents'],
+  // Others
+  ['cursor','default | pointer | text | grab | grabbing | not-allowed | none'],
+  ['pointer-events','auto | none | all'],
+  ['user-select','auto | none | text | all'],
+  ['resize','none | both | horizontal | vertical'],
+  ['object-fit','fill | contain | cover | none | scale-down'],
+  ['object-position','center | top | 50% 50%'],
+  ['list-style','none | disc | decimal'],
+  ['content','\'\'| counter(n) | attr(data-x)'],
+  ['isolation','auto | isolate'],
+  ['mix-blend-mode','normal | multiply | screen | overlay | darken | lighten'],
+  ['filter','none | blur(4px) | brightness(1.1) | contrast(1.1) | grayscale(1)'],
+  ['clip-path','none | circle(50%) | polygon(0 0,100% 0,100% 100%)'],
+];
+
+const propsPane = document.getElementById('props-pane');
+cssProps.forEach(([prop, values]) => {
+  const chip = document.createElement('div');
+  chip.className = 'prop-chip';
+  chip.innerHTML = prop + '<span>' + values.split('|')[0].trim() + '</span>';
+  chip.title = values;
+  chip.addEventListener('click', () => {
+    const firstVal = values.split('|')[0].trim();
+    const snippet = `${prop}: ${firstVal};`;
+    // Switch to css tab
+    document.querySelector('.tab[data-tab="css"]')?.click();
+    insertAtCursor(editors.css, snippet);
+    showTip(chip, 'Insertado: ' + snippet);
+    scheduleRun();
+  });
+  propsPane.appendChild(chip);
+});
+
+/* ══════════════════════════════
+   RESIZE HANDLE (editor width)
+══════════════════════════════ */
+const handle = document.getElementById('resize-handle');
+const editorCol = document.getElementById('editor-col');
+let resizing = false, resizeStartX = 0, resizeStartW = 0;
+
+handle.addEventListener('mousedown', e => {
+  resizing = true;
+  resizeStartX = e.clientX;
+  resizeStartW = editorCol.offsetWidth;
+  handle.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+});
+document.addEventListener('mousemove', e => {
+  if (!resizing) return;
+  const dx = e.clientX - resizeStartX;
+  const newW = Math.max(180, Math.min(800, resizeStartW + dx));
+  editorCol.style.width = newW + 'px';
+});
+document.addEventListener('mouseup', () => {
+  if (!resizing) return;
+  resizing = false;
+  handle.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+});
+
+/* ══════════════════════════════
+   STATUS BAR
+══════════════════════════════ */
+function updateStatusBar() {
+  const tab = state.activeTab;
+  const ta = tab === 'html' ? editors.html :
+             tab === 'css'  ? editors.css  :
+             tab === 'js'   ? editors.js   : null;
+  if (!ta) return;
+  const lines = ta.value.split('\n').length;
+  const chars = ta.value.length;
+  document.getElementById('status-tab').textContent = tab.toUpperCase();
+  document.getElementById('status-lines').textContent = lines + ' líneas';
+  document.getElementById('status-chars').textContent = chars + ' chars';
+}
+
+// Cursor position
+['html','css','js'].forEach(key => {
+  editors[key].addEventListener('keyup', updateCursor);
+  editors[key].addEventListener('click', updateCursor);
+  editors[key].addEventListener('input', () => { updateStatusBar(); updateCursor(); });
+  function updateCursor() {
+    const ta = editors[key];
+    const txt = ta.value.substring(0, ta.selectionStart);
+    const lines = txt.split('\n');
+    const ln = lines.length;
+    const col = lines[lines.length - 1].length + 1;
+    document.getElementById('status-cursor').textContent = `Ln ${ln}, Col ${col}`;
+  }
+});
+
+/* ══════════════════════════════
+   TAB KEY IN EDITORS
+══════════════════════════════ */
+[...Object.values(editors), ...Object.values(mqTextareas)].forEach(ta => {
+  if (!ta) return;
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const s = ta.selectionStart, end = ta.selectionEnd;
+      ta.value = ta.value.substring(0,s) + '  ' + ta.value.substring(end);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+    }
+    // Ctrl+Enter → run
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runPreview();
+    }
+    // Auto-close brackets
+    const pairs = {'(':')', '[':']', '{':'}', '"':'"', "'":"'", '`':'`'};
+    if (pairs[e.key]) {
+      const s = ta.selectionStart, en = ta.selectionEnd;
+      if (s === en) { // no selection
+        e.preventDefault();
+        const close = pairs[e.key];
+        ta.value = ta.value.substring(0,s) + e.key + close + ta.value.substring(en);
+        ta.selectionStart = ta.selectionEnd = s + 1;
+      }
+    }
+  });
+});
+
+/* ══════════════════════════════
+   TOOLBAR BUTTONS
+══════════════════════════════ */
+document.getElementById('formatBtn').addEventListener('click', () => {
+  const ta = state.activeTab === 'html' ? editors.html :
+             state.activeTab === 'css'  ? editors.css  :
+             state.activeTab === 'js'   ? editors.js   : null;
+  if (!ta) return;
+  // Basic indent formatter
+  try {
+    let txt = ta.value;
+    if (state.activeTab === 'css' || state.activeTab === 'html') {
+      // Simple: normalize empty lines
+      txt = txt.replace(/\n{3,}/g, '\n\n').trim();
+    }
+    ta.value = txt;
+    showTip(document.getElementById('formatBtn'), 'Formateado ✓');
+  } catch(e) {}
+});
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const html = buildFullHTML();
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mi-app.html';
+  a.click();
+  showTip(document.getElementById('saveBtn'), '¡Descargado!');
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  const tab = state.activeTab;
+  if (!confirm(`¿Limpiar el archivo ${tab}?`)) return;
+  if (editors[tab]) editors[tab].value = '';
+  scheduleRun();
+  updateStatusBar();
+});
+
+/* ══════════════════════════════
+   TOOLTIP
+══════════════════════════════ */
+const tip = document.getElementById('tip');
+let tipTimer;
+function showTip(el, msg) {
+  const rect = el.getBoundingClientRect();
+  tip.textContent = msg;
+  tip.style.display = 'block';
+  tip.style.left = rect.left + 'px';
+  tip.style.top  = (rect.top - 30) + 'px';
+  clearTimeout(tipTimer);
+  tipTimer = setTimeout(() => tip.style.display = 'none', 1500);
+}
+
+/* ══════════════════════════════
+   INIT
+══════════════════════════════ */
+// Blank start — user writes from scratch
+editors.html.value = '';
+editors.css.value = '';
+editors.js.value = '';
+
+updateStatusBar();
+runPreview(); // empty preview
+</script>
+</body>
+</html>
